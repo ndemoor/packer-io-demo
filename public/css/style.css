@@ -1,0 +1,34 @@
+body {
+  background: #ecf0f1;
+  font: normal 15px "Merriweather Sans", sans-serif;
+  padding: 40px;
+}
+#photos-feed {
+  width: 500px;
+  margin: 0 auto;
+}
+#photos-feed article {
+  background: #fff;
+  margin: 20px 0;
+  -webkit-box-shadow: 0px 1px 3px 0px #bdc3c7;
+  box-shadow: 0px 1px 3px 0px #bdc3c7;
+  border-radius: 4px;
+  color: transparent;
+  overflow: hidden;
+  padding: 10px;
+}
+#photos-feed article img {
+  max-width: 480px;
+  display: block;
+}
+h1 {
+  text-align: center;
+  width: 300px;
+  font-weight: 200;
+  line-height: 40px;
+  font-size: 24px;
+  margin: 0 auto;
+  color: #606060;
+  border-radius: 5px;
+  margin-bottom: 40px;
+}

@@ -1,0 +1,12 @@
+{
+  "name": "aws-ugb-1",
+  "author": "WooRank",
+  "version": "1.0.0",
+  "dependencies": {
+    "aws-sdk": "~1.5.2",
+    "express": "~3.4.0",
+    "underscore": "~1.5.2",
+    "config": "~0.4.29",
+    "yaml": "~0.2.3"
+  }
+}

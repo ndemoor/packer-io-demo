@@ -1,0 +1,7 @@
+AWS: 
+  accessKeyId: ""
+  secretAccessKey: ""
+  region: ""
+
+S3:
+  bucket: ""
