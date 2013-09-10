@@ -126,7 +126,7 @@
        }
     },
 
-    "Instance" : {
+    "ProvisionedInstance" : {
       "Type" : "AWS::EC2::Instance",
       "Metadata" : {
         "AWS::CloudFormation::Init" : {
@@ -167,7 +167,7 @@
             
             "# Kick-off the CloudFormation Init process\n",
             "cfn-init -s ", { "Ref" : "AWS::StackId" }, 
-            "         -r Instance ",
+            "         -r ProvisionedInstance ",
             "         --access-key ", { "Ref" : "AppUserAccessKey" },
             "         --secret-key ", { "Fn::GetAtt": [ "AppUserAccessKey", "SecretAccessKey" ] },
             "         --region ", { "Ref" : "AWS::Region" }, 
@@ -196,7 +196,7 @@
 
     "InstanceWaitCondition" : {
       "Type" : "AWS::CloudFormation::WaitCondition",
-      "DependsOn" : "Instance",
+      "DependsOn" : "ProvisionedInstance",
       "Properties" : {
         "Handle"  : { "Ref" : "InstanceWaitHandle" },
         "Timeout" : "900"
@@ -216,7 +216,7 @@
     },
 
     "InstanceIP" : {
-      "Value" : { "Fn::GetAtt" : [ "Instance" , "PublicIp" ] },
+      "Value" : { "Fn::GetAtt" : [ "ProvisionedInstance" , "PublicIp" ] },
       "Description" : "Instance IP"
     }
   }
