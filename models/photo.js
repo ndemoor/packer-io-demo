@@ -53,7 +53,8 @@ module.exports = (function () {
 
     Photo.getS3().listObjects({
       Bucket  : app.get("config").S3.bucket,
-      MaxKeys : limit
+      MaxKeys : limit,
+      Prefix  : "photos/"
     }, function objectsReceived(error, response) {
       try {
         if (error) {
@@ -65,12 +66,14 @@ module.exports = (function () {
         while (response.Contents.length > 0) {
           var photoObject = response.Contents.pop();
 
-          var photo = new Photo({
-            key          : photoObject.Key,
-            dateModified : photoObject.LastModified
-          });
+          if (photoObject.Key !== "photos/") {
+            var photo = new Photo({
+              key          : photoObject.Key,
+              dateModified : photoObject.LastModified
+            });
 
-          photos.push(photo);
+            photos.push(photo);
+          }
         }
 
         callback(null, photos);
