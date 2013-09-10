@@ -60,6 +60,9 @@ module.exports = (function () {
         if (error) {
           throw error;
         }
+        else if (typeof response.Contents === "undefined" || response.Contents === null) {
+          throw new Error("Request failure");
+        }
 
         // Process response
         var photos = [];
