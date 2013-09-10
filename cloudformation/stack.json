@@ -36,6 +36,11 @@
       "us-west-2" : { "32" : "ami-806cf0b0", "64" : "ami-826cf0b2" },
       "us-west-1" : { "32" : "ami-1e7b4e5b", "64" : "ami-187b4e5d" },
       "eu-west-1" : { "32" : "ami-c9a6bcbd", "64" : "ami-b5a6bcc1" }
+    },
+
+    "NodeJs" : {
+      "32" : { "tarball" : "http://nodejs.org/dist/v0.11.7/node-v0.11.7-linux-x86.tar.gz" },
+      "64" : { "tarball" : "http://nodejs.org/dist/v0.11.7/node-v0.11.7-linux-x64.tar.gz" }
     }
   },
 
@@ -130,11 +135,37 @@
       "Type" : "AWS::EC2::Instance",
       "Metadata" : {
         "AWS::CloudFormation::Init" : {
-          "packages" : {
-            "apt" : {
-              "wget"            : [],
-              "curl"            : [],
-              "git"             : []
+          "config" : {
+            "packages" : {
+              "apt" : {
+                "wget"            : [],
+                "curl"            : [],
+                "git"             : []
+              }
+            },
+            "files" : {
+              "/etc/init/photoapp.conf" : {
+                "content" : { "Fn::Join" : ["", [
+                  "#/etc/init/photoapp.conf\n",
+                  "description \"PhotoApp Node.js\"\n",
+                  "\n",
+                  "start on (local-filesystems and net-device-up IFACE=eth0)\n",
+                  "stop on shutdown\n",
+                  "\n",
+                  "respawn\n",
+                  "respawn limit 5 60\n",
+                  "\n",
+                  "chdir /srv/photoapp\n",
+                  "env NODE_ENV=production\n",
+                  "exec node /var/www/photoapp/app.js >> /var/log/photoapp.log 2>&1\n"
+                  ]]},
+                "mode"  : "000755",
+                "owner" : "root",
+                "group" : "root"
+              }
+            },
+            "sources" : {
+              "/var/www/photoapp" : "https://github.com/ndemoor/AWS-ugb-1/tarball/master"
             }
           }
         }
@@ -172,6 +203,10 @@
             "         --secret-key ", { "Fn::GetAtt": [ "AppUserAccessKey", "SecretAccessKey" ] },
             "         --region ", { "Ref" : "AWS::Region" }, 
             " || error_exit 'Failed to run cfn-init'\n",
+
+            "# Install node from tarball\n",
+            "wget -O /tmp/node.tar.gz ", { "Fn::FindInMap" : [ "NodeJs", { "Ref" : "InstanceArch" }, "tarball" ] }, "\n",
+            "sudo tar zxf /tmp/node.tar.gz --strip-components=1  --no-same-owner -C /usr/local\n",
 
             "# If all went well, signal success\n",
             "cfn-signal -e $? '", { "Ref" : "InstanceWaitHandle" }, "'\n"
