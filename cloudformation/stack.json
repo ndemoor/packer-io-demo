@@ -1,0 +1,49 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description" : "AWS User Group Belgium Kick-off meetup PhotoApp",
+
+  "Resources" : {
+    "Bucket" : {
+      "Type" : "AWS::S3::Bucket",
+      "Properties" : {
+        "AccessControl" : "Private"
+      }
+    },
+
+    "BucketPolicy" : {
+      "Type" : "AWS::S3::BucketPolicy",
+      "Properties" : {
+        "PolicyDocument" : {
+          "Id" : "PhotoAppBucketPolicy",
+          "Statement" : [
+            {
+              "Sid": "AllowPublicRead",
+              "Effect": "Allow",
+              "Principal": { "AWS": "*" },
+              "Action": [
+                "s3:GetObject"
+              ],
+              "Resource": { 
+                "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "Bucket" }, "/photos/*" ] ] 
+              }
+            }
+          ]
+        },
+        "Bucket" : { "Ref" : "Bucket" }
+      }
+    }
+  },
+
+  "Outputs" : {
+    "BucketName" : {
+      "Value" : { "Ref" : "Bucket" },
+      "Description" : "Bucket name logical ID"
+    },
+
+    "DomainName" : {
+      "Value" : { "Fn::GetAtt" : [ "Bucket", "DomainName" ] },
+      "Description" : "DNS name pointing to bucket"
+    }
+  }
+}
