@@ -8,6 +8,34 @@
       "Type" : "String",
       "Description" : "Password to login the application user",
       "NoEcho": "true"
+    },
+
+    "InstanceType" : {
+      "Description" : "EC2 instance type",
+      "Type" : "String",
+      "Default" : "m1.small",
+      "AllowedValues" : [ "t1.micro","m1.small","m1.medium","m1.large","m1.xlarge","m2.xlarge","m2.2xlarge","m2.4xlarge","m3.xlarge","m3.2xlarge","c1.medium","c1.xlarge","cc1.4xlarge","cc2.8xlarge","cg1.4xlarge"],
+      "ConstraintDescription" : "must be a valid EC2 instance type."
+    },
+
+    "InstanceArch" : {
+      "Type" : "String",
+      "Description" : "Instance architecture (32 or 64)",
+      "AllowedValues" : [ "32", "64" ]
+    },
+
+    "InstanceKeyName" : {
+      "Type" : "String", 
+      "Description" : "Name of an existing EC2 KeyPair to enable SSH access to the web server"
+    }
+  },
+
+  "Mappings" : {
+    "AWSRegionArch2UbuntuAMI" : {
+      "us-east-1" : { "32" : "ami-b9a3ecd0", "64" : "ami-bba3ecd2" },
+      "us-west-2" : { "32" : "ami-806cf0b0", "64" : "ami-826cf0b2" },
+      "us-west-1" : { "32" : "ami-1e7b4e5b", "64" : "ami-187b4e5d" },
+      "eu-west-1" : { "32" : "ami-c9a6bcbd", "64" : "ami-b5a6bcc1" }
     }
   },
 
@@ -84,6 +112,35 @@
           "Status": "Active",
           "UserName": { "Ref" : "AppUser" } 
        }
+    },
+
+    "Instance" : {
+      "Type" : "AWS::EC2::Instance", 
+      "Properties" : {
+        "ImageId" : { 
+          "Fn::FindInMap" : [ 
+            "AWSRegionArch2UbuntuAMI", { "Ref" : "AWS::Region" }, { "Ref" : "InstanceArch" } 
+          ] 
+        },
+        "KeyName" : { "Ref" : "InstanceKeyName" },
+        "InstanceType" : { "Ref" : "InstanceType" },
+        "SecurityGroups" : [{ "Ref" : "InstanceSecurityGroup" }],
+        "Monitoring" : true,
+        "Tags" : [
+          { "Key" : "Name", "Value" : "PhotoApp (AWS UG)" }  
+        ]
+      }
+    },
+
+    "InstanceSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "HTTP and SSH access",
+        "SecurityGroupIngress" : [ 
+          { "IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp" : "0.0.0.0/0" },
+          { "IpProtocol" : "tcp", "FromPort" : "80", "ToPort" : "80", "CidrIp" : "0.0.0.0/0" } 
+        ]
+      }
     }
   },
 
@@ -96,6 +153,11 @@
     "DomainName" : {
       "Value" : { "Fn::GetAtt" : [ "Bucket", "DomainName" ] },
       "Description" : "DNS name pointing to bucket"
+    },
+
+    "InstanceIP" : {
+      "Value" : { "Fn::GetAtt" : [ "Instance" , "PublicIp" ] },
+      "Description" : "Instance IP"
     }
   }
 }
