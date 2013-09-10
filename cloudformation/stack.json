@@ -102,6 +102,18 @@
                 }
               ]
             }
+          },{ 
+            "PolicyName": "AppUserCfnPolicy",
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Sid": "AllowCfnAccess",
+                  "Action": "cloudformation:DescribeStackResource",
+                  "Effect": "Allow",
+                  "Resource": "*"
+                }
+              ]
+            }
           }]
        }
     },
@@ -115,7 +127,18 @@
     },
 
     "Instance" : {
-      "Type" : "AWS::EC2::Instance", 
+      "Type" : "AWS::EC2::Instance",
+      "Metadata" : {
+        "AWS::CloudFormation::Init" : {
+          "packages" : {
+            "apt" : {
+              "wget"            : [],
+              "curl"            : [],
+              "git"             : []
+            }
+          }
+        }
+      },
       "Properties" : {
         "ImageId" : { 
           "Fn::FindInMap" : [ 
@@ -128,7 +151,31 @@
         "Monitoring" : true,
         "Tags" : [
           { "Key" : "Name", "Value" : "PhotoApp (AWS UG)" }  
-        ]
+        ],
+        "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+            "#!/bin/bash\n",
+
+            "function error_exit\n",
+            "{\n",
+            "  cfn-signal -e 1 -r \"$1\" '", { "Ref" : "InstanceWaitHandle" }, "'\n",
+            "  exit 1\n",
+            "}\n",
+
+            "# We install cfn-bootstrap first through easy_install, as it is not installed by default\n",
+            "apt-get -y install python-setuptools\n",
+            "easy_install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz\n",
+            
+            "# Kick-off the CloudFormation Init process\n",
+            "cfn-init -s ", { "Ref" : "AWS::StackId" }, 
+            "         -r Instance ",
+            "         --access-key ", { "Ref" : "AppUserAccessKey" },
+            "         --secret-key ", { "Fn::GetAtt": [ "AppUserAccessKey", "SecretAccessKey" ] },
+            "         --region ", { "Ref" : "AWS::Region" }, 
+            " || error_exit 'Failed to run cfn-init'\n",
+
+            "# If all went well, signal success\n",
+            "cfn-signal -e $? '", { "Ref" : "InstanceWaitHandle" }, "'\n"
+        ]]}}
       }
     },
 
@@ -140,6 +187,19 @@
           { "IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp" : "0.0.0.0/0" },
           { "IpProtocol" : "tcp", "FromPort" : "80", "ToPort" : "80", "CidrIp" : "0.0.0.0/0" } 
         ]
+      }
+    },
+
+    "InstanceWaitHandle" : {
+      "Type" : "AWS::CloudFormation::WaitConditionHandle"
+    },
+
+    "InstanceWaitCondition" : {
+      "Type" : "AWS::CloudFormation::WaitCondition",
+      "DependsOn" : "Instance",
+      "Properties" : {
+        "Handle"  : { "Ref" : "InstanceWaitHandle" },
+        "Timeout" : "900"
       }
     }
   },
