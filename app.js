@@ -10,6 +10,18 @@ GLOBAL.app = new Express();
 // Get configuration
 var config = require("config");
 
+if (typeof config === "undefined") {
+  config = {};
+}
+
+if (typeof config.AWS === "undefined") {
+  config.AWS = {};
+}
+
+if (typeof config.S3 === "undefined") {
+  config.S3 = {};
+}
+
 // Override with env variables
 if (_.has(process.env, "ACCESS_KEY_ID")) {
   config.AWS.accessKeyId = process.env.ACCESS_KEY_ID;
