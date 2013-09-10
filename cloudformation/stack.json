@@ -157,6 +157,10 @@
                   "\n",
                   "chdir /srv/photoapp\n",
                   "env NODE_ENV=production\n",
+                  "env ACCESS_KEY_ID=", { "Ref" : "AppUserAccessKey" }, "\n",
+                  "env SECRET_ACCESS_KEY=", { "Fn::GetAtt" : [ "AppUserAccessKey" , "SecretAccessKey" ] }, "\n",
+                  "env BUCKET=", { "Ref" : "Bucket" }, "\n",
+                  "env REGION=", { "Ref" : "AWS::Region" }, "\n",
                   "exec node /var/www/photoapp/app.js >> /var/log/photoapp.log 2>&1\n"
                   ]]},
                 "mode"  : "000755",
@@ -165,7 +169,7 @@
               }
             },
             "sources" : {
-              "/var/www/photoapp" : "https://github.com/ndemoor/AWS-ugb-1/tarball/master"
+              "/var/www/photoapp" : "https://github.com/ndemoor/AWS-UGB-PhotoApp/tarball/master"
             }
           }
         }
@@ -207,6 +211,13 @@
             "# Install node from tarball\n",
             "wget -O /tmp/node.tar.gz ", { "Fn::FindInMap" : [ "NodeJs", { "Ref" : "InstanceArch" }, "tarball" ] }, "\n",
             "sudo tar zxf /tmp/node.tar.gz --strip-components=1  --no-same-owner -C /usr/local\n",
+
+            "# Install app\n",
+            "cd /var/www/photoapp\n",
+            "npm install || error_exit 'Failed to npm install'\n",
+
+            "# Run app from the created Upstart file in /etc/init/photoapp.conf\n",
+            "/sbin/start photoapp\n",
 
             "# If all went well, signal success\n",
             "cfn-signal -e $? '", { "Ref" : "InstanceWaitHandle" }, "'\n"
