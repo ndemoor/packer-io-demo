@@ -3,6 +3,14 @@
 
   "Description" : "AWS User Group Belgium Kick-off meetup PhotoApp",
 
+  "Parameters" : {
+    "AppUserPassword" : {
+      "Type" : "String",
+      "Description" : "Password to login the application user",
+      "NoEcho": "true"
+    }
+  },
+
   "Resources" : {
     "Bucket" : {
       "Type" : "AWS::S3::Bucket",
@@ -32,6 +40,50 @@
         },
         "Bucket" : { "Ref" : "Bucket" }
       }
+    },
+
+    "AppUser" : {
+       "Type": "AWS::IAM::User",
+       "Properties": {
+          "LoginProfile": { "Password": { "Ref" : "AppUserPassword" } },
+          "Policies": [{ 
+            "PolicyName": "AppUserPolicy",
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Sid": "AllowBucketAccess",
+                  "Action": "s3:*",
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "Bucket" } ] ]
+                  }
+                },
+                {
+                  "Sid": "AllowBucketContantAccess",
+                  "Action": "s3:*",
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "Bucket" }, "/*" ] ]
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": "s3:ListAllMyBuckets",
+                  "Resource": "*",
+                  "Condition": {}
+                }
+              ]
+            }
+          }]
+       }
+    },
+
+    "AppUserAccessKey" : {
+       "Type": "AWS::IAM::AccessKey",
+       "Properties": {
+          "Status": "Active",
+          "UserName": { "Ref" : "AppUser" } 
+       }
     }
   },
 
