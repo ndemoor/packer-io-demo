@@ -39,8 +39,8 @@
     },
 
     "NodeJs" : {
-      "32" : { "tarball" : "http://nodejs.org/dist/v0.11.7/node-v0.11.7-linux-x86.tar.gz" },
-      "64" : { "tarball" : "http://nodejs.org/dist/v0.11.7/node-v0.11.7-linux-x64.tar.gz" }
+      "32" : { "tarball" : "http://nodejs.org/dist/v0.10.18/node-v0.10.18-linux-x86.tar.gz" },
+      "64" : { "tarball" : "http://nodejs.org/dist/v0.10.18/node-v0.10.18-linux-x64.tar.gz" }
     }
   },
 
