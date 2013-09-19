@@ -4,12 +4,6 @@
   "Description" : "AWS User Group Belgium Kick-off meetup PhotoApp",
 
   "Parameters" : {
-    "AppUserPassword" : {
-      "Type" : "String",
-      "Description" : "Password to login the application user",
-      "NoEcho": "true"
-    },
-
     "InstanceType" : {
       "Description" : "EC2 instance type",
       "Type" : "String",
@@ -74,63 +68,65 @@
         "Bucket" : { "Ref" : "Bucket" }
       }
     },
-
-    "AppUser" : {
-       "Type": "AWS::IAM::User",
-       "Properties": {
-          "LoginProfile": { "Password": { "Ref" : "AppUserPassword" } },
-          "Policies": [{ 
-            "PolicyName": "AppUserPolicy",
-            "PolicyDocument": {
-              "Statement": [
-                {
-                  "Sid": "AllowBucketAccess",
-                  "Action": "s3:*",
-                  "Effect": "Allow",
-                  "Resource": {
-                    "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "Bucket" } ] ]
-                  }
-                },
-                {
-                  "Sid": "AllowBucketContantAccess",
-                  "Action": "s3:*",
-                  "Effect": "Allow",
-                  "Resource": {
-                    "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "Bucket" }, "/*" ] ]
-                  }
-                },
-                {
-                  "Effect": "Allow",
-                  "Action": "s3:ListAllMyBuckets",
-                  "Resource": "*",
-                  "Condition": {}
-                }
-              ]
-            }
-          },{ 
-            "PolicyName": "AppUserCfnPolicy",
-            "PolicyDocument": {
-              "Statement": [
-                {
-                  "Sid": "AllowCfnAccess",
-                  "Action": "cloudformation:DescribeStackResource",
-                  "Effect": "Allow",
-                  "Resource": "*"
-                }
-              ]
-            }
-          }]
-       }
-    },
-
-    "AppUserAccessKey" : {
-       "Type": "AWS::IAM::AccessKey",
-       "Properties": {
-          "Status": "Active",
-          "UserName": { "Ref" : "AppUser" } 
-       }
-    },
-
+		"AppRolePolicies": {
+			"Type": "AWS::IAM::Policy",
+			"Properties": {
+				"PolicyDocument": {
+					"Statement": [{
+						"Sid": "AllowBucketAccess",
+						"Action": "s3:*",
+						"Effect": "Allow",
+						"Resource": {
+							"Fn::Join": ["", ["arn:aws:s3:::", {
+								"Ref": "Bucket"
+							}]]
+						}
+					}, {
+						"Sid": "AllowBucketContantAccess",
+						"Action": "s3:*",
+						"Effect": "Allow",
+						"Resource": {
+							"Fn::Join": ["", ["arn:aws:s3:::", {
+								"Ref": "Bucket"
+							}, "/*"]]
+						}
+					}, {
+						"Effect": "Allow",
+						"Action": "s3:ListAllMyBuckets",
+						"Resource": "*",
+						"Condition": {}
+					}]
+				},
+				"PolicyName": "AppUserPolicy",
+				"Roles": [{
+					"Ref": "AppRole"
+				}]
+			}
+		},
+		"AppInstanceProfile": {
+			"Type": "AWS::IAM::InstanceProfile",
+			"Properties": {
+				"Path": "/",
+				"Roles": [{
+					"Ref": "AppRole"
+				}]
+			}
+		},
+		"AppRole": {
+			"Type": "AWS::IAM::Role",
+			"Properties": {
+				"AssumeRolePolicyDocument": {
+					"Statement": [{
+						"Action": ["sts:AssumeRole"],
+						"Effect": "Allow",
+						"Principal": {
+							"Service": ["ec2.amazonaws.com"]
+						}
+					}]
+				},
+				"Path": "/"
+			}
+		},
     "ProvisionedInstance" : {
       "Type" : "AWS::EC2::Instance",
       "Metadata" : {
@@ -157,8 +153,6 @@
                   "\n",
                   "chdir /var/www/photoapp\n",
                   "env NODE_ENV=production\n",
-                  "env ACCESS_KEY_ID=", { "Ref" : "AppUserAccessKey" }, "\n",
-                  "env SECRET_ACCESS_KEY=", { "Fn::GetAtt" : [ "AppUserAccessKey" , "SecretAccessKey" ] }, "\n",
                   "env BUCKET=", { "Ref" : "Bucket" }, "\n",
                   "env REGION=", { "Ref" : "AWS::Region" }, "\n",
                   "env PORT=80\n",
@@ -184,6 +178,7 @@
         "KeyName" : { "Ref" : "InstanceKeyName" },
         "InstanceType" : { "Ref" : "InstanceType" },
         "SecurityGroups" : [{ "Ref" : "InstanceSecurityGroup" }],
+				"IamInstanceProfile": { "Ref": "AppInstanceProfile" },
         "Monitoring" : true,
         "Tags" : [
           { "Key" : "Name", "Value" : "PhotoApp (AWS UG)" }  
@@ -204,8 +199,6 @@
             "# Kick-off the CloudFormation Init process\n",
             "cfn-init -s ", { "Ref" : "AWS::StackId" }, 
             "         -r ProvisionedInstance ",
-            "         --access-key ", { "Ref" : "AppUserAccessKey" },
-            "         --secret-key ", { "Fn::GetAtt": [ "AppUserAccessKey", "SecretAccessKey" ] },
             "         --region ", { "Ref" : "AWS::Region" }, 
             " || error_exit 'Failed to run cfn-init'\n",
 
