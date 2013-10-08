@@ -3,41 +3,6 @@
 
   "Description" : "AWS User Group Belgium Kick-off meetup PhotoApp",
 
-  "Parameters" : {
-    "InstanceType" : {
-      "Description" : "EC2 instance type",
-      "Type" : "String",
-      "Default" : "m1.small",
-      "AllowedValues" : [ "t1.micro","m1.small","m1.medium","m1.large","m1.xlarge","m2.xlarge","m2.2xlarge","m2.4xlarge","m3.xlarge","m3.2xlarge","c1.medium","c1.xlarge","cc1.4xlarge","cc2.8xlarge","cg1.4xlarge"],
-      "ConstraintDescription" : "must be a valid EC2 instance type."
-    },
-
-    "InstanceArch" : {
-      "Type" : "String",
-      "Description" : "Instance architecture (32 or 64)",
-      "AllowedValues" : [ "32", "64" ]
-    },
-
-    "InstanceKeyName" : {
-      "Type" : "String", 
-      "Description" : "Name of an existing EC2 KeyPair to enable SSH access to the web server"
-    }
-  },
-
-  "Mappings" : {
-    "AWSRegionArch2UbuntuAMI" : {
-      "us-east-1" : { "32" : "ami-b9a3ecd0", "64" : "ami-bba3ecd2" },
-      "us-west-2" : { "32" : "ami-806cf0b0", "64" : "ami-826cf0b2" },
-      "us-west-1" : { "32" : "ami-1e7b4e5b", "64" : "ami-187b4e5d" },
-      "eu-west-1" : { "32" : "ami-c9a6bcbd", "64" : "ami-b5a6bcc1" }
-    },
-
-    "NodeJs" : {
-      "32" : { "tarball" : "http://nodejs.org/dist/v0.10.18/node-v0.10.18-linux-x86.tar.gz" },
-      "64" : { "tarball" : "http://nodejs.org/dist/v0.10.18/node-v0.10.18-linux-x64.tar.gz" }
-    }
-  },
-
   "Resources" : {
     "Bucket" : {
       "Type" : "AWS::S3::Bucket",
@@ -127,93 +92,6 @@
 				"Path": "/"
 			}
 		},
-    "ProvisionedInstance" : {
-      "Type" : "AWS::EC2::Instance",
-      "Metadata" : {
-        "AWS::CloudFormation::Init" : {
-          "config" : {
-            "packages" : {
-              "apt" : {
-                "wget"            : [],
-                "curl"            : [],
-                "git"             : []
-              }
-            },
-            "files" : {
-              "/etc/init/photoapp.conf" : {
-                "content" : { "Fn::Join" : ["", [
-                  "#/etc/init/photoapp.conf\n",
-                  "description \"PhotoApp Node.js\"\n",
-                  "\n",
-                  "start on (local-filesystems and net-device-up IFACE=eth0)\n",
-                  "stop on shutdown\n",
-                  "\n",
-                  "respawn\n",
-                  "respawn limit 5 60\n",
-                  "\n",
-                  "chdir /var/www/photoapp\n",
-                  "env NODE_ENV=production\n",
-                  "env BUCKET=", { "Ref" : "Bucket" }, "\n",
-                  "env REGION=", { "Ref" : "AWS::Region" }, "\n",
-                  "env PORT=80\n",
-                  "exec node /var/www/photoapp/app.js >> /var/log/photoapp.log 2>&1\n"
-                  ]]},
-                "mode"  : "000755",
-                "owner" : "root",
-                "group" : "root"
-              }
-            },
-            "sources" : {
-              "/var/www/photoapp" : "https://github.com/ndemoor/AWS-UGB-PhotoApp/tarball/master"
-            }
-          }
-        }
-      },
-      "Properties" : {
-        "ImageId" : { 
-          "Fn::FindInMap" : [ 
-            "AWSRegionArch2UbuntuAMI", { "Ref" : "AWS::Region" }, { "Ref" : "InstanceArch" } 
-          ] 
-        },
-        "KeyName" : { "Ref" : "InstanceKeyName" },
-        "InstanceType" : { "Ref" : "InstanceType" },
-        "SecurityGroups" : [{ "Ref" : "InstanceSecurityGroup" }],
-				"IamInstanceProfile": { "Ref": "AppInstanceProfile" },
-        "Monitoring" : true,
-        "Tags" : [
-          { "Key" : "Name", "Value" : "PhotoApp (AWS UG)" }  
-        ],
-        "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
-            "#!/bin/bash\n",
-
-            "function error_exit\n",
-            "{\n",
-            "  cfn-signal -e 1 -r \"$1\" '", { "Ref" : "InstanceWaitHandle" }, "'\n",
-            "  exit 1\n",
-            "}\n",
-
-            "# We install cfn-bootstrap first through easy_install, as it is not installed by default\n",
-            "apt-get -y install python-setuptools\n",
-            "easy_install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz\n",
-            
-            "# Kick-off the CloudFormation Init process\n",
-            "cfn-init -s ", { "Ref" : "AWS::StackId" }, 
-            "         -r ProvisionedInstance ",
-            "         --region ", { "Ref" : "AWS::Region" }, 
-            " || error_exit 'Failed to run cfn-init'\n",
-
-            "# Install node from tarball\n",
-            "wget -O /tmp/node.tar.gz ", { "Fn::FindInMap" : [ "NodeJs", { "Ref" : "InstanceArch" }, "tarball" ] }, "\n",
-            "sudo tar zxf /tmp/node.tar.gz --strip-components=1  --no-same-owner -C /usr/local\n",
-
-            "# Run app from the created Upstart file in /etc/init/photoapp.conf\n",
-            "/sbin/start photoapp\n",
-
-            "# If all went well, signal success\n",
-            "cfn-signal -e $? '", { "Ref" : "InstanceWaitHandle" }, "'\n"
-        ]]}}
-      }
-    },
 
     "InstanceSecurityGroup" : {
       "Type" : "AWS::EC2::SecurityGroup",
@@ -221,21 +99,9 @@
         "GroupDescription" : "HTTP and SSH access",
         "SecurityGroupIngress" : [ 
           { "IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp" : "0.0.0.0/0" },
-          { "IpProtocol" : "tcp", "FromPort" : "80", "ToPort" : "80", "CidrIp" : "0.0.0.0/0" } 
+          { "IpProtocol" : "tcp", "FromPort" : "80", "ToPort" : "80", "CidrIp" : "0.0.0.0/0" },
+          { "IpProtocol" : "tcp", "FromPort" : "3000", "ToPort" : "3000", "CidrIp" : "0.0.0.0/0" } 
         ]
-      }
-    },
-
-    "InstanceWaitHandle" : {
-      "Type" : "AWS::CloudFormation::WaitConditionHandle"
-    },
-
-    "InstanceWaitCondition" : {
-      "Type" : "AWS::CloudFormation::WaitCondition",
-      "DependsOn" : "ProvisionedInstance",
-      "Properties" : {
-        "Handle"  : { "Ref" : "InstanceWaitHandle" },
-        "Timeout" : "900"
       }
     }
   },
@@ -244,16 +110,6 @@
     "BucketName" : {
       "Value" : { "Ref" : "Bucket" },
       "Description" : "Bucket name logical ID"
-    },
-
-    "DomainName" : {
-      "Value" : { "Fn::GetAtt" : [ "Bucket", "DomainName" ] },
-      "Description" : "DNS name pointing to bucket"
-    },
-
-    "InstanceIP" : {
-      "Value" : { "Fn::GetAtt" : [ "ProvisionedInstance" , "PublicIp" ] },
-      "Description" : "Instance IP"
     }
   }
 }
