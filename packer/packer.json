@@ -1,0 +1,42 @@
+{
+  "builders": [
+    {
+      "type": "amazon-ebs",
+      "access_key": "[AWS_ACCESS_KEY]",
+      "secret_key": "[AWS_SECRET_KEY]",
+      "region": "eu-west-1",
+      "source_ami": "ami-9eec0be9",
+      "instance_type": "t1.micro",
+      "ssh_username": "ubuntu",
+      "ami_name": "ICAB Tech Talk 4 {{timestamp}}"
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "file",
+      "source": "./upstart.conf",
+      "destination": "/tmp/photoapp.conf" 
+    },
+    {
+      "type": "shell",
+      "inline": [
+        "sleep 30",
+
+        "sudo apt-get install -y git wget curl",
+
+        "wget -O /tmp/node.tar.gz http://nodejs.org/dist/v0.10.18/node-v0.10.18-linux-x64.tar.gz",
+        "sudo tar zxf /tmp/node.tar.gz --strip-components=1  --no-same-owner -C /usr/local",
+
+        "mkdir -p ~/www/photoapp",
+        "git clone https://github.com/ndemoor/ICAB-TechTalk-Packer.git ~/www/photoapp",
+
+        "sed -i.bak s/AWS_S3_BUCKET_NAME/[BUCKET_NAME]/g /tmp/photoapp.conf",
+        "sed -i.bak s/AWS_REGION/[REGION]/g /tmp/photoapp.conf",
+
+        "sudo mv /tmp/photoapp.conf /etc/init/photoapp.conf",
+        "sudo chmod 755 /etc/init/photoapp.conf",
+        "sudo start photoapp"
+      ]
+    }
+  ]
+}

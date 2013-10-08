@@ -1,12 +1,13 @@
-AWS-UGB-PhotoApp
-================
+ICAB Tech Talk #4 Demo App 
+==========================
 
-Code repository accompanying the AWS User Group Belgium meetup: http://www.meetup.com/AWS-User-Group-Belgium/events/130957022/
+Code repository accompanying the ICAB Tech Talk.
+The node.js application was forked from another repository: ![AWS-UGB-PhotoApp](https://github.com/ndemoor/AWS-UGB-PhotoApp)
 
 Description:
 ------------
 
-We create a cloudformation stack to deploy a NodeJS web application from scratch.
+We provision an AMI through packer.io to deploy a NodeJS web application from scratch.
 
 Don't forget to upload images to `photos` folder in the created S3 bucket.
 
