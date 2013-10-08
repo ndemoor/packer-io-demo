@@ -2,7 +2,7 @@ ICAB Tech Talk #4 Demo App
 ==========================
 
 Code repository accompanying the ICAB Tech Talk.
-The node.js application was forked from another repository: ![AWS-UGB-PhotoApp](https://github.com/ndemoor/AWS-UGB-PhotoApp)
+The node.js application was forked from another repository: [AWS-UGB-PhotoApp](https://github.com/ndemoor/AWS-UGB-PhotoApp)
 
 Description:
 ------------
