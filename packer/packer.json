@@ -30,8 +30,8 @@
         "mkdir -p ~/www/photoapp",
         "git clone https://github.com/ndemoor/ICAB-TechTalk-Packer.git ~/www/photoapp",
 
-        "sed -i.bak s/AWS_S3_BUCKET_NAME/[BUCKET_NAME]/g /tmp/photoapp.conf",
-        "sed -i.bak s/AWS_REGION/[REGION]/g /tmp/photoapp.conf",
+        "sed -i.bak s/AWS_S3_BUCKET_NAME/tech-talk-bucket-1mqkk735bl8hz/g /tmp/photoapp.conf",
+        "sed -i.bak s/AWS_REGION/eu-west-1/g /tmp/photoapp.conf",
 
         "sudo mv /tmp/photoapp.conf /etc/init/photoapp.conf",
         "sudo chmod 755 /etc/init/photoapp.conf",
